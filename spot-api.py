@@ -25,6 +25,7 @@ def setUpDatabase(db_name):
     cur = conn.cursor()
     return cur, conn
 
+#STEP 3: Create table for top songs with song and artist information
 def top_songs():
     top_100 = sp.playlist_tracks('37i9dQZEVXbMDoHDwVN2tF', limit=50)
     conn = sqlite3.connect('songs.db')
@@ -34,40 +35,55 @@ def top_songs():
                         Artists TEXT,
                         UNIQUE (SongName, Artists)
                     )''')
-    conn = sqlite3.connect('songs.db')
-    cursor = conn.cursor()
     for track in top_100['items']:
         song_name = track['track']['name']
         artists = ', '.join([artist['name'] for artist in track['track']['artists']])
-        cursor.execute("INSERT INTO TopSongs (SongName, Artists) VALUES (?, ?)", (song_name, artists))
+
+        # Check if the entry already exists
+        cursor.execute("SELECT * FROM TopSongs WHERE SongName = ? AND Artists = ?", (song_name, artists))
+        existing_entry = cursor.fetchone()
+
+        if existing_entry is None:
+            cursor.execute("INSERT INTO TopSongs (SongName, Artists) VALUES (?, ?)", (song_name, artists))
+
     conn.commit()
     conn.close()
-        
-        
-    
-def artist_appearances(connection, table_name):
-    cursor = connection.cursor()
 
-    # Retrieve data for artist appearances from the database
-    cursor.execute(f"SELECT Artists, COUNT(*) AS Appearances FROM {table_name} GROUP BY Artists")
+# Retrieve data for artist appearances, and top performing artists from the database
+def artist_appearances():
+    conn = sqlite3.connect('songs.db')
+    cursor = conn.cursor()
+    cursor.execute("SELECT Artists, COUNT(*) AS Appearances FROM TopSongs GROUP BY Artists")
     artist_data = cursor.fetchall()
+    artist_count = {}
+    for artists_str in artist_data:
+        artists = artists_str[0].split(', ')
+        for artist in artists:
+            if artist in artist_count:
+                artist_count[artist] += 1
+            else:
+                artist_count[artist] = 1
+    top_artists = {artist: count for artist, count in artist_count.items() if count > 1}
+    conn.close()
+    print(artist_count)
+    print(top_artists)
+    # plt.figure(figsize=(10, 6))
+    # plt.bar(top_artists.keys(), top_artists.values(), color='skyblue')
+    # plt.xlabel('Artists')
+    # plt.ylabel('Number of Appearances')
+    # plt.title('Top Performing Artists')
+    # plt.xticks(rotation=45, ha='right')
+    # plt.tight_layout()  # Adjusts subplot parameters to give specified padding
+    # plt.show()
+    return artist_count, top_artists
 
-    return artist_data
 
-def plot_artist_comparison(artist, spotify_appearances, apple_appearances):
-    # Plotting comparison between Spotify and Apple Music appearances
-    labels = ['Spotify', 'Apple Music']
-    values = [spotify_appearances.get(artist, 0), apple_appearances.get(artist, 0)]
-
-    plt.bar(labels, values, color=['green', 'blue'])
-    plt.title(f"Artist Appearances: {artist}")
-    plt.xlabel('Platform')
-    plt.ylabel('Number of Appearances')
-    plt.show()
-    
 
 def main():
     top_songs()
+    artist_appearances()
+    
+    
 
 if __name__ == "__main__":
     main()
