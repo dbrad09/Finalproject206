@@ -27,7 +27,7 @@ def setUpDatabase(db_name):
 
 #STEP 3: Create table for top songs with song and artist information
 def top_songs():
-    top_100 = sp.playlist_tracks('37i9dQZEVXbMDoHDwVN2tF', limit=50)
+    top_100 = sp.playlist_tracks('0sDahzOkMWOmLXfTMf2N4N', limit=100)
     conn = sqlite3.connect('songs.db')
     cursor = conn.cursor()
     cursor.execute('''CREATE TABLE IF NOT EXISTS TopSongs (
@@ -67,14 +67,14 @@ def artist_appearances():
     conn.close()
     print(artist_count)
     print(top_artists)
-    # plt.figure(figsize=(10, 6))
-    # plt.bar(top_artists.keys(), top_artists.values(), color='skyblue')
-    # plt.xlabel('Artists')
-    # plt.ylabel('Number of Appearances')
-    # plt.title('Top Performing Artists')
-    # plt.xticks(rotation=45, ha='right')
-    # plt.tight_layout()  # Adjusts subplot parameters to give specified padding
-    # plt.show()
+    plt.figure(figsize=(10, 6))
+    plt.bar(top_artists.keys(), top_artists.values(), color='skyblue')
+    plt.xlabel('Artists')
+    plt.ylabel('Number of Appearances')
+    plt.title('Top Performing Artists')
+    plt.xticks(rotation=45, ha='right')
+    plt.tight_layout()  # Adjusts subplot parameters to give specified padding
+    plt.show()
     return artist_count, top_artists
 
 
