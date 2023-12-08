@@ -19,13 +19,6 @@ sp = spotipy.Spotify(client_credentials_manager=client_credentials_manager)
 
 
 #STEP 2: Create Database in local environment
-def setUpDatabase(db_name):
-    path = os.path.dirname(os.path.abspath(__file__))
-    conn = sqlite3.connect(path+'/'+db_name)
-    cur = conn.cursor()
-    return cur, conn
-
-#STEP 3: Create table for top songs with song and artist information
 def top_songs():
     top_100 = sp.playlist_tracks('0sDahzOkMWOmLXfTMf2N4N', limit=100)
     conn = sqlite3.connect('songs.db')
@@ -35,7 +28,16 @@ def top_songs():
                         Artists TEXT,
                         UNIQUE (SongName, Artists)
                     )''')
-    for track in top_100['items']:
+    # Get the count of current entries in the database
+    cursor.execute("SELECT COUNT(*) FROM TopSongs")
+    current_count = cursor.fetchone()[0]
+
+    # Determine the start and end indices for processing batches of 25
+    start_index = current_count
+    end_index = min(start_index + 25, len(top_100['items']))
+
+    for i in range(start_index, end_index):
+        track = top_100['items'][i]
         song_name = track['track']['name']
         artists = ', '.join([artist['name'] for artist in track['track']['artists']])
 
@@ -44,10 +46,29 @@ def top_songs():
         existing_entry = cursor.fetchone()
 
         if existing_entry is None:
-            cursor.execute("INSERT INTO TopSongs (SongName, Artists) VALUES (?, ?)", (song_name, artists))
+            cursor.execute("INSERT OR IGNORE INTO TopSongs (SongName, Artists) VALUES (?, ?)", (song_name, artists))
 
     conn.commit()
     conn.close()
+    # cursor.execute("SELECT COUNT(*) FROM TopSongs")
+    # current_count = cursor.fetchone()[0]
+
+    # for track in top_100['items']:
+    #     song_name = track['track']['name']
+    #     artists = ', '.join([artist['name'] for artist in track['track']['artists']])
+
+    #     # Check if the entry already exists
+    #     cursor.execute("SELECT * FROM TopSongs WHERE SongName = ? AND Artists = ?", (song_name, artists))
+    #     existing_entry = cursor.fetchone()
+
+    #     if existing_entry is None:
+    #         cursor.execute("SELECT COUNT (*) FROM TopSongs")
+    #         top_counter= cursor.fetchone()
+    #         if len(top_counter) <= 25:
+    #             cursor.execute("INSERT INTO TopSongs (SongName, Artists) VALUES (?, ?)", (song_name, artists))
+
+    # conn.commit()
+    # conn.close()
 
 # Retrieve data for artist appearances, and top performing artists from the database
 def artist_appearances():
