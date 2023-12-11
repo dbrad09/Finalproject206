@@ -103,6 +103,7 @@ def main():
     conn_second.close()
 
     delete_database()
+    
 
 
 if __name__ == "__main__":
