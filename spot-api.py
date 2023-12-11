@@ -98,11 +98,21 @@ def artist_appearances():
     plt.show()
     return artist_count, top_artists
 
+def write_to_text_file(artist_count, top_artists, file_name):
+    with open(file_name, 'w') as file:
+        file.write("Artist Count:\n")
+        for artist, count in artist_count.items():
+            file.write(f"{artist}: {count}\n")
+        
+        file.write("\nTop Performing Artists:\n")
+        for artist, count in top_artists.items():
+            file.write(f"{artist}: {count}\n")
 
 
 def main():
     top_songs()
-    artist_appearances()
+    artist_count, top_artists = artist_appearances()
+    write_to_text_file(artist_count, top_artists, 'artist_info.txt')
     
     
 
