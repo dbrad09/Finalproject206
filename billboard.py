@@ -9,7 +9,7 @@ url = "https://billboard-api5.p.rapidapi.com/api/charts/artist-100"
 querystring = {"week": "2023-11-25"}
 
 headers = {
-    "X-RapidAPI-Key": "c3254f9db9msh45981f2889c9f06p162e08jsne86dc48cb693",
+    "X-RapidAPI-Key": "4c2fc7b058mshf55dca06dbc8f37p102ab0jsnebfc4490a9cc",
     "X-RapidAPI-Host": "billboard-api5.p.rapidapi.com"
 }
 
@@ -26,12 +26,12 @@ def create_database():
         create_tables(cursor)
         conn.commit()
         conn.close()
-    if not os.path.exists('second_table.db'):
-        conn = sqlite3.connect('second_table.db')
-        cursor = conn.cursor()
-        create_tables(cursor)
-        conn.commit()
-        conn.close()
+    # if not os.path.exists('second_table.db'):
+    #     conn = sqlite3.connect('second_table.db')
+    #     cursor = conn.cursor()
+    #     create_tables(cursor)
+    #     conn.commit()
+    #     conn.close()
 
 
 def insert_entry_into_db(entry, cursor):
@@ -81,10 +81,10 @@ def delete_database():
         
 def calculate_top_avg_weeks():
     conn_chart = sqlite3.connect('chart_entries.db')
-    conn_second = sqlite3.connect('second_table.db')
+    #conn_second = sqlite3.connect('second_table.db')
 
     cursor_chart = conn_chart.cursor()
-    cursor_second = conn_second.cursor()
+    #cursor_second = conn_second.cursor()
 
     cursor_chart.execute("""
         SELECT ce.artist, SUM(st.weeksonchart) AS total_weeks
@@ -98,7 +98,7 @@ def calculate_top_avg_weeks():
     results = cursor_chart.fetchall()
 
     conn_chart.close()
-    conn_second.close()
+    #conn_second.close()
 
     return results
 
@@ -128,8 +128,8 @@ def main():
     conn_chart = sqlite3.connect('chart_entries.db')
     cursor_chart = conn_chart.cursor()
 
-    conn_second = sqlite3.connect('second_table.db')
-    cursor_second = conn_second.cursor()
+    #conn_second = sqlite3.connect('second_table.db')
+    #cursor_second = conn_second.cursor()
 
     last = get_current_entry_count(cursor_chart, 'chart_entries')
 
@@ -138,14 +138,14 @@ def main():
     entries = dict_charts['chart']['entries']
 
     last = process_entries(entries, cursor_chart, 'chart_entries', last)
-    second_last = process_entries(entries, cursor_second, 'second_table', last)
+    #second_last = process_entries(entries, cursor_second, 'second_table', last)
 
     conn_chart.commit()
     conn_chart.close()
 
    
-    conn_second.commit()
-    conn_second.close()
+    #conn_second.commit()
+    #conn_second.close()
     top = calculate_top_avg_weeks()
     visualize(top)
     write_file(top)
