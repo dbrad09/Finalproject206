@@ -55,17 +55,17 @@ def get_current_entry_count(cursor, table_name):
     return cursor.fetchone()[0]
 
 
-def process_entries(entries, cursor, table_name, start_index, batch_size=25):
+def process_entries(entries, cursor, table_name, start, size=25):
     create_tables(cursor)
 
-    current_count = get_current_entry_count(cursor, table_name)
-    end_index = min(start_index + batch_size, len(entries), current_count + batch_size)
+    current = get_current_entry_count(cursor, table_name)
+    end = min(start + size, len(entries), current + size)
 
-    for i in range(start_index, end_index):
-        entry = entries[i]
+    for x in range(start, end):
+        entry = entries[x]
         insert_entry_into_db(entry, cursor)
 
-    return end_index
+    return end
 
 
 def delete_database():
@@ -92,7 +92,7 @@ def calculate_top_avg_weeks():
         JOIN second_table st ON ce.rank = st.rank
         GROUP BY ce.artist
         ORDER BY total_weeks DESC
-        LIMIT 5;
+        LIMIT 50;
     """)
 
     results = cursor_chart.fetchall()
@@ -102,26 +102,25 @@ def calculate_top_avg_weeks():
 
     return results
 
-# Function to visualize top 5 artists with highest average weeks on chart
-def visualize_top_avg_weeks(results):
+def visualize(results):
     artists = [result[0] for result in results]
     total_weeks = [result[1] for result in results]
-    colors = plt.cm.viridis(np.linspace(0, 1, len(artists)))
     
     plt.figure(figsize=(10, 6))
-    bars = plt.bar(artists, total_weeks, color=colors)
+    plt.scatter(artists, total_weeks, color='Green', alpha=0.6)
     plt.xlabel('Artists')
     plt.ylabel('Total Weeks on Chart')
-    plt.title('Total Weeks on Chart for Top 5 Artists')
+    plt.title('Distribution of Total Weeks on Chart for Top 50 Artists')
     plt.xticks(rotation=45, ha='right')
     plt.tight_layout()
     plt.show()
-    
-def write_to_file(results):
+
+def write_file(results):
     with open('top_artists_weeks.txt', 'w') as file:
-        file.write("Top 5 Artists and Their Total Weeks on Chart:\n")
+        file.write("Top 50 Artists and Their Total Weeks on Chart:\n")
         for result in results:
             file.write(f"{result[0]}: {result[1]} weeks\n")
+
 
 def main():
     create_database()
@@ -132,14 +131,14 @@ def main():
     conn_second = sqlite3.connect('second_table.db')
     cursor_second = conn_second.cursor()
 
-    last_processed_index_chart = get_current_entry_count(cursor_chart, 'chart_entries')
+    last = get_current_entry_count(cursor_chart, 'chart_entries')
 
     response = requests.get(url, headers=headers, params=querystring)
     dict_charts = response.json()
     entries = dict_charts['chart']['entries']
 
-    last_processed_index_chart = process_entries(entries, cursor_chart, 'chart_entries', last_processed_index_chart)
-    last_processed_index_second = process_entries(entries, cursor_second, 'second_table', last_processed_index_chart)
+    last = process_entries(entries, cursor_chart, 'chart_entries', last)
+    second_last = process_entries(entries, cursor_second, 'second_table', last)
 
     conn_chart.commit()
     conn_chart.close()
@@ -147,9 +146,9 @@ def main():
    
     conn_second.commit()
     conn_second.close()
-    top_avg_weeks_results = calculate_top_avg_weeks()
-    visualize_top_avg_weeks(top_avg_weeks_results)
-    write_to_file(top_avg_weeks_results)
+    top = calculate_top_avg_weeks()
+    visualize(top)
+    write_file(top)
 
    # delete_database()
     
