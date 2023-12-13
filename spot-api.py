@@ -2,7 +2,7 @@
 import spotipy
 from spotipy.oauth2 import SpotifyClientCredentials
 
-#othe imports
+#other imports
 import sys
 import sqlite3
 import json
@@ -10,7 +10,7 @@ import os
 import matplotlib.pyplot as plt
 import unittest
 
-#STEP 1: access spotify using credentials below
+#access spotify using credentials below
 
 client_id="bca2c2e8e6d94866aff803ac08baf51f"
 client_secret="c8e5cf89332e4040b2ab70c1b47d9ded"
@@ -18,7 +18,7 @@ client_credentials_manager = SpotifyClientCredentials(client_id=client_id, clien
 sp = spotipy.Spotify(client_credentials_manager=client_credentials_manager)
 
 
-#STEP 2: Create Database in local environment
+#Create Databases, retrieve top tracks from Spotify, store artist ID and name in Artists db, store ArtistIDs and song names in TopSongs
 def top_songs():
     top_100 = sp.playlist_tracks('0sDahzOkMWOmLXfTMf2N4N', limit=100)
     conn = sqlite3.connect('chart_entries.db')
@@ -32,19 +32,15 @@ def top_songs():
                         ArtistIDs TEXT,
                         FOREIGN KEY (ArtistIDs) REFERENCES Artists(ArtistID)
                     )''')
-
-    # Get the count of current entries in the database
     cursor.execute("SELECT COUNT(*) FROM TopSongs")
     current_count = cursor.fetchone()[0]
 
-    # Determine the start and end indices for processing batches of 25
     start_index = current_count
     end_index = min(start_index + 25, len(top_100['items']))
 
     for i in range(start_index, end_index):
         track = top_100['items'][i]
         song_name = track['track']['name']
-        #artists = ', '.join([artist['name'] for artist in track['track']['artists']])
         artists = [artist['name'] for artist in track['track']['artists']]
         
         #store artist IDs for each artist
@@ -66,23 +62,7 @@ def top_songs():
     conn.commit()
     conn.close()  
 
-    #     # Check if the entry already exists
-    #     cursor.execute("SELECT * FROM TopSongs WHERE SongName = ? AND Artists = ?", (song_name, artists))
-    #     existing_entry = cursor.fetchone()
-
-    #     if existing_entry is None:
-    #         cursor.execute("INSERT OR IGNORE INTO TopSongs (SongName, Artists) VALUES (?, ?)", (song_name, artists))
-
-    
-    
-    
-    # cursor.execute('''CREATE TABLE IF NOT EXISTS AritstID (
-    #                     Arists TEXT,
-    #                     ID INTEGER,
-    #                     UNIQUE (Artists, ID)
-    #                 )''')
-
-# Retrieve data for artist appearances, and top performing artists from the database
+# Retrieve data for artist appearances, and top performing artists from the databases
 def artist_appearances():
     conn = sqlite3.connect('chart_entries.db')
     cursor = conn.cursor()
@@ -102,6 +82,7 @@ def artist_appearances():
     print(top_artists)
     return artist_count, top_artists
 
+#visualize top artists by name instead of ID that appear more than once in top tracks
 def top_artists_vis(top_artists):
     conn = sqlite3.connect('chart_entries.db')
     cursor = conn.cursor()
@@ -122,7 +103,7 @@ def top_artists_vis(top_artists):
     plt.tight_layout()
     plt.show()
 
-
+# write out artist names and appearences in TopSongs db
 def text_file(artist_count, top_artists, file_name):
     conn = sqlite3.connect('chart_entries.db')
     cursor = conn.cursor()
